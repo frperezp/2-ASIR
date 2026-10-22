@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apuntes ASGBD - Usuarios, Permisos y Seguridad en MySQL</title>
+    <style>
+        :root {
+            --primary-color: #00758F; /* Color corporativo MySQL */
+            --secondary-color: #F29111; /* Naranja MySQL */
+            --bg-color: #f8f9fa;
+            --text-color: #333333;
+            --code-bg: #272822;
+            --code-text: #f8f8f2;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--secondary-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 2.2em;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 6px;
+            margin-top: 40px;
+            font-size: 1.6em;
+        }
+
+        h3 {
+            color: #444444;
+            margin-top: 25px;
+            font-size: 1.2em;
+        }
+
+        p {
+            margin: 10px 0;
+        }
+
+        ul, ol {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        /* Recuadros de aviso, consejos y notas */
+        .callout {
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-left: 5px solid;
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        .callout-important {
+            border-color: #e74c3c;
+            background-color: #fdf5f5;
+        }
+
+        .callout-note {
+            border-color: var(--secondary-color);
+            background-color: #fef9e7;
+        }
+
+        .callout-tip {
+            border-color: #2ecc71;
+            background-color: #f4fcf7;
+        }
+
+        .callout-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Bloques de código */
+        pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 0.9em;
+            margin: 15px 0;
+        }
+
+        code {
+            font-family: monospace;
+            background: #eee;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+
+        /* Tablas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 10px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+            }
+            pre {
+                background-color: #f4f4f4 !important;
+                color: #333 !important;
+                border: 1px solid #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>Administración de Sistemas Gestores de Bases de Datos: MySQL</h1>
+    <p>Apuntes teórico-prácticos sobre la Tríada CID, gestión de usuarios, roles, permisos, esquemas y seguridad en MySQL.</p>
+
+    <!-- SECCIÓN 1 -->
+    <h2>La Tríada CID (Confidencialidad, Integridad y Disponibilidad) en MySQL</h2>
+    <p>La tríada CID es un modelo de seguridad fundamental para garantizar la protección de la información en cualquier sistema informático, incluido MySQL. Este modelo se utiliza para establecer las bases de las políticas de seguridad en el SGBD.</p>
+
+    <h3>1. Confidencialidad (Confidentiality)</h3>
+    <p>Garantiza que la información solo sea accesible para usuarios y procesos autorizados. En MySQL se logra mediante:</p>
+    <ul>
+        <li><strong>Autenticación y Control de Acceso:</strong> MySQL valida las credenciales mediante el par <code>'usuario'@'host'</code> utilizando componentes modernos de autenticación como <code>caching_sha2_password</code>.</li>
+        <li><strong>Privilegios y Roles:</strong> Control granular mediante privilegios globales, de base de datos, de tabla o de columna, además del uso de roles para agrupar permisos.</li>
+        <li><strong>Cifrado de datos (Encryption):</strong> Soporte de <strong>TDE (Transparent Data Encryption)</strong> para cifrar tablas y tablespaces en reposo, y conexiones cifradas mediante <strong>TLS/SSL</strong> para datos en tránsito.</li>
+        <li><strong>Auditoría:</strong> Plugin de auditoría (MySQL Audit Plugin) para registrar operaciones, inicios de sesión y accesos no autorizados a datos sensibles.</li>
+    </ul>
+
+    <h3>2. Integridad (Integrity)</h3>
+    <p>Asegura que los datos se mantengan exactos, coherentes y no sean modificados de forma indebida o accidental.</p>
+    <ul>
+        <li><strong>Restricciones (Constraints):</strong> Definición de claves primarias (<code>PRIMARY KEY</code>), claves foráneas (<code>FOREIGN KEY</code>), unicidad (<code>UNIQUE</code>), valores no nulos (<code>NOT NULL</code>) y validaciones personalizadas (<code>CHECK</code>).</li>
+        <li><strong>Validaciones y Triggers:</strong> Disparadores (<code>TRIGGERS</code>) e instrucciones almacenadas para validar reglas de negocio complejas antes de insertar o modificar datos.</li>
+        <li><strong>Cumplimiento ACID y Control de Transacciones:</strong> El motor InnoDB garantiza la integridad mediante transacciones que cumplen las propiedades ACID (Atomisidad, Consistencia, Aislamiento y Durabilidad).</li>
+        <li><strong>Copias de seguridad y Binlog:</strong> Copias periódicas y uso del registro binario (<em>Binary Log</em>) para garantizar la recuperación fiable ante fallos.</li>
+    </ul>
+
+    <h3>3. Disponibilidad (Availability)</h3>
+    <p>Garantiza que la base de datos se mantenga operativa y accesible cuando los usuarios o aplicaciones autorizados lo requieran.</p>
+    <ul>
+        <li><strong>Alta Disponibilidad y Replicación:</strong> Soluciones como <em>MySQL InnoDB Cluster</em>, <em>MySQL Group Replication</em> o arquitectura Primario-Secundario (Master-Slave) para tolerancia a fallos.</li>
+        <li><strong>Recuperación ante desastres:</strong> Réplicas asíncronas o semisíncronas en ubicaciones secundarias.</li>
+        <li><strong>Copias de seguridad y restauración:</strong> Herramientas como <code>mysqldump</code>, <code>mysqlpump</code> o <em>MySQL Enterprise Backup</em> para la restauración rápida del servicio.</li>
+        <li><strong>Monitorización:</strong> Herramientas como <em>MySQL Enterprise Monitor</em> o <code>Performance Schema</code> para analizar la salud del sistema y evitar paradas no planificadas.</li>
+    </ul>
+
+    <div class="callout callout-note">
+        <div class="callout-title">💡 Resumen de la Tríada CID</div>
+        <ul>
+            <li><strong>Confidencialidad:</strong> Autenticación por host, cifrado SSL/TDE, permisos y roles.</li>
+            <li><strong>Integridad:</strong> Restricciones relacionales, motor transaccional InnoDB y triggers.</li>
+            <li><strong>Disponibilidad:</strong> Replicación, InnoDB Cluster, backups y binlogs.</li>
+        </ul>
+    </div>
+
+
+    <!-- SECCIÓN 2 -->
+    <h2>Gestión de Usuarios en MySQL</h2>
+    <p>En MySQL, la identidad de un usuario se define por la combinación de un nombre de usuario y el host desde el cual se conecta: <code>'usuario'@'host'</code>.</p>
+
+    <h3>🔑 Formato de Identificación y Autenticación</h3>
+    <p>A diferencia de otros SGBD, MySQL distingue el origen de la conexión:</p>
+    <ul>
+        <li><code>'alumne'@'localhost'</code>: Solo permite conexiones desde la propia máquina local.</li>
+        <li><code>'alumne'@'192.168.1.50'</code>: Solo permite conexiones desde una IP específica.</li>
+        <li><code>'alumne'@'%'</code>: Permite conexiones desde cualquier host remoto (comodín <code>%</code>).</li>
+    </ul>
+
+    <p>El método de autenticación por defecto en MySQL 8.0+ es <code>caching_sha2_password</code>, ofreciendo un cifrado seguro de credenciales.</p>
+
+    <h3>🛠️ Creación, Modificación y Eliminación de Usuarios</h3>
+    <p>Las operaciones de gestión de usuarios requieren el privilegio global <code>CREATE USER</code> o ser superusuario (<code>GRANT OPTION</code> / <code>SYSTEM_USER</code>).</p>
+
+    <pre><code>-- Crear un usuario normal (conecta solo desde localhost)
+CREATE USER 'alumne'@'localhost' IDENTIFIED BY '1234';
+
+-- Crear un usuario que puede conectar desde cualquier IP (%)
+CREATE USER 'profe'@'%' IDENTIFIED BY 'abc123';
+
+-- Modificar contraseña de un usuario
+ALTER USER 'alumne'@'localhost' IDENTIFIED BY 'NuevaPass2026!';
+
+-- Forzar el plugin de autenticación si fuera necesario
+ALTER USER 'alumne'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'NuevaPass2026!';
+
+-- Eliminar un usuario
+DROP USER 'alumne'@'localhost';</code></pre>
+
+    <div class="callout callout-important">
+        <div class="callout-title">⚠️ Importante al eliminar usuarios en MySQL</div>
+        <p>En MySQL, si eliminas un usuario con <code>DROP USER</code>, sus conexiones activas no se cortan automáticamente. Además, a diferencia de PostgreSQL, eliminar un usuario no falla si posee tablas u objetos, ya que los objetos pertenecen a las bases de datos (esquemas) y no al usuario como propietario individual.</p>
+    </div>
+
+    <h3>🔍 Consultas útiles para la gestión de usuarios</h3>
+    <pre><code>-- Ver todos los usuarios existentes y su plugin de autenticación
+SELECT User, Host, plugin, account_locked, password_expired FROM mysql.user;
+
+-- Ver la sesión y el usuario actual
+SELECT USER(), CURRENT_USER();
+-- USER(): Muestra el usuario y host con el que te intentaste conectar.
+-- CURRENT_USER(): Muestra la cuenta con la que MySQL ha validado los permisos en la sesión actual.
+
+-- Ver el nombre de la base de datos/esquema actual
+SELECT DATABASE();</code></pre>
+
+
+    <!-- SECCIÓN 3 -->
+    <h2>Esquemas (Schemas) y Bases de Datos en MySQL</h2>
+    <p>En MySQL, a diferencia de PostgreSQL u Oracle, <strong>DATABASE y SCHEMA son exactamente lo mismo</strong>. Los términos se usan indistintamente como sinónimos.</p>
+
+    <pre><code>CREATE DATABASE colegio;
+-- Es 100% equivalente a:
+CREATE SCHEMA colegio;</code></pre>
+
+    <h3>📌 Concepto de Esquema/Base de Datos</h3>
+    <p>Un esquema en MySQL es un contenedor lógico de objetos (tablas, vistas, procedimientos, funciones, disparadores). No existe el concepto de "esquema public" por defecto como en PostgreSQL.</p>
+
+    <pre><code>-- Seleccionar la base de datos sobre la que trabajar
+USE colegio;
+
+-- Crear una tabla dentro de la base de datos seleccionada
+CREATE TABLE alumnos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL
+);
+
+-- Hacer referencia a una tabla de otra base de datos mediante sintaxis explícita:
+SELECT * FROM colegio.alumnos;</code></pre>
+
+    <div class="callout callout-tip">
+        <div class="callout-title">💡 Equivalencia entre SGBDs</div>
+        <p>En PostgreSQL o Oracle existe una jerarquía (Instancia &rarr; Base de datos &rarr; Esquema &rarr; Tabla). En MySQL, la estructura es directa: <strong>Servidor (Instancia) &rarr; Base de Datos / Esquema &rarr; Tabla</strong>.</p>
+    </div>
+
+
+    <!-- SECCIÓN 4 -->
+    <h2>Bloqueo de Usuarios, Caducidad y Gestión de Sesiones</h2>
+
+    <h3>🔐 Bloquear y Desbloquear Cuentas</h3>
+    <p>En MySQL es posible bloquear de manera nativa la cuenta de un usuario sin necesidad de cambiar su contraseña ni eliminarlo:</p>
+    <pre><code>-- Bloquear un usuario (impide iniciar sesión)
+ALTER USER 'omar'@'localhost' ACCOUNT LOCK;
+
+-- Desbloquear cuenta
+ALTER USER 'omar'@'localhost' ACCOUNT UNLOCK;</code></pre>
+
+    <h3>⏳ Caducidad y Políticas de Contraseñas</h3>
+    <p>MySQL permite configurar políticas de expiración de contraseñas de forma global o individual:</p>
+    <pre><code>-- Establecer que la contraseña caduque en una fecha específica
+ALTER USER 'omar'@'localhost' PASSWORD EXPIRE; -- Caduca inmediatamente
+
+-- Configurar que expire cada 90 días
+ALTER USER 'omar'@'localhost' PASSWORD EXPIRE INTERVAL 90 DAY;
+
+-- Restablecer a la política por defecto
+ALTER USER 'omar'@'localhost' PASSWORD EXPIRE DEFAULT;
+
+-- Forzar que la contraseña NUNCA caduque
+ALTER USER 'omar'@'localhost' PASSWORD EXPIRE NEVER;</code></pre>
+
+    <div class="callout callout-tip">
+        <div class="callout-title">💡 Forzar cambio de contraseña en el próximo inicio de sesión</div>
+        <p>Con <code>PASSWORD EXPIRE</code>, la próxima vez que el usuario conecte se le permitirá autenticarse, pero MySQL restringirá la ejecución de cualquier consulta hasta que ejecute un <code>ALTER USER</code> para cambiar su clave.</p>
+    </div>
+
+    <h3>🔌 Gestión y Desconexión de Sesiones Activas</h3>
+    <p>Para consultar las sesiones de usuarios conectados actualmente:</p>
+    <pre><code>-- Ver procesos y conexiones activas
+SHOW PROCESSLIST;
+-- O consultando la tabla de rendimiento:
+SELECT ID, USER, HOST, DB, COMMAND, TIME, STATE, INFO FROM information_schema.processlist;</code></pre>
+
+    <p>Para cancelar una consulta o cerrar la sesión de un usuario de forma inmediata:</p>
+    <pre><code>-- Cancelar la consulta activa sin cerrar la conexión
+KILL QUERY 105; -- (105 es el ID del hilo/proceso)
+
+-- Terminar la sesión completamente (desconectar al usuario)
+KILL CONNECTION 105;</code></pre>
+
+
+    <!-- SECCIÓN 5 -->
+    <h2>Sistema de Permisos (Privilegios) en MySQL</h2>
+    <p>Un privilegio en MySQL es un derecho específico que se otorga a un usuario o rol para ejecutar comandos SQL o gestionar componentes del servidor.</p>
+
+    <h3>📋 Niveles de Privilegios en MySQL</h3>
+    <ol>
+        <li><strong>Nivel Global:</strong> Se aplica a todas las bases de datos del servidor (<code>*.*</code>). Ejemplo: <code>CREATE USER</code>, <code>SHUTDOWN</code>, <code>PROCESS</code>.</li>
+        <li><strong>Nivel de Base de Datos:</strong> Se aplica a todos los objetos dentro de un esquema (<code>nombre_bd.*</code>). Ejemplo: <code>CREATE</code>, <code>DROP</code>, <code>ALTER</code>.</li>
+        <li><strong>Nivel de Tabla:</strong> Se aplica a una tabla específica (<code>nombre_bd.nombre_tabla</code>). Ejemplo: <code>SELECT</code>, <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>.</li>
+        <li><strong>Nivel de Columna:</strong> Se limita a columnas concretas de una tabla. Ejemplo: <code>SELECT (nombre, telefono)</code>, <code>UPDATE (direccion)</code>.</li>
+        <li><strong>Nivel de Rutina:</strong> Se aplica a procedimientos almacenados y funciones (<code>EXECUTE</code>).</li>
+    </ol>
+
+    <h3>🛠️ Concesión y Revocación de Privilegios (GRANT / REVOKE)</h3>
+    <pre><code>-- Conceder conexión y lectura completa sobre una base de datos
+GRANT SELECT ON colegio.* TO 'alumne'@'localhost';
+
+-- Conceder permisos DML sobre todas las tablas de un esquema
+GRANT SELECT, INSERT, UPDATE, DELETE ON colegio.* TO 'profesor'@'%';
+
+-- Privilegios a nivel de columna
+GRANT SELECT (nombre, telefono), UPDATE (telefono) ON colegio.alumnos TO 'recepcion'@'localhost';
+
+-- Activar la propagación de permisos (WITH GRANT OPTION)
+GRANT SELECT ON colegio.* TO 'jefe_estudios'@'%' WITH GRANT OPTION;
+
+-- Revocar permisos específicos
+REVOKE DELETE ON colegio.* FROM 'profesor'@'%';
+
+-- Aplicar los cambios en privilegios inmediatos (recomendado tras modificar tablas del sistema)
+FLUSH PRIVILEGES;</code></pre>
+
+    <h3>🔍 Consultar Privilegios Otorgados</h3>
+    <pre><code>-- Ver los privilegios de un usuario específico
+SHOW GRANTS FOR 'alumne'@'localhost';
+
+-- Ver privilegios propios
+SHOW GRANTS FOR CURRENT_USER();</code></pre>
+
+    <div class="callout callout-important">
+        <div class="callout-title">⚠️ Comportamiento de UPDATE/DELETE sin SELECT</div>
+        <p>Si un usuario tiene permisos de <code>UPDATE</code> o <code>DELETE</code> pero carece de permiso <code>SELECT</code> sobre las columnas utilizadas en la cláusula <code>WHERE</code>, la sentencia fallará por falta de privilegios de lectura para evaluar la condición.</p>
+    </div>
+
+
+    <!-- SECCIÓN 6 -->
+    <h2>Gestión de Roles en MySQL</h2>
+    <p>A partir de <strong>MySQL 8.0</strong> se incluye el soporte nativo para <strong>Roles</strong>. Un rol es un contenedor nombrado que agrupa un conjunto de privilegios de seguridad.</p>
+
+    <h3>🛠️ Creación, Asignación y Activación de Roles</h3>
+    <pre><code>-- 1. Crear un rol
+CREATE ROLE 'rol_desarrollador', 'rol_consultor';
+
+-- 2. Asignar privilegios al rol
+GRANT SELECT, INSERT, UPDATE, DELETE ON colegio.* TO 'rol_desarrollador';
+GRANT SELECT ON colegio.* TO 'rol_consultor';
+
+-- 3. Asignar el rol a un usuario
+GRANT 'rol_desarrollador' TO 'desarrollador1'@'localhost';
+
+-- 4. Revocar un rol
+REVOKE 'rol_desarrollador' FROM 'desarrollador1'@'localhost';</code></pre>
+
+    <div class="callout callout-important">
+        <div class="callout-title">⚠️ Activación de Roles en MySQL (Muy Importante)</div>
+        <p>Por defecto en MySQL, cuando a un usuario se le concede un rol, **el rol no está activo automáticamente** cuando inicia sesión. El usuario debe activarlo o la sesión debe configurarse para activarlos por defecto.</p>
+        <pre><code>-- Activar los roles asignados en la sesión actual:
+SET ROLE 'rol_desarrollador';
+-- O activar todos los roles concedidos:
+SET ROLE ALL;
+
+-- Configurar para que MySQL active TODOS los roles de forma automática al iniciar sesión:
+SET GLOBAL activate_all_roles_on_login = ON;
+-- O de forma específica para un usuario:
+ALTER USER 'desarrollador1'@'localhost' DEFAULT ROLE ALL;</code></pre>
+    </div>
+
+
+    <!-- SECCIÓN 7 -->
+    <h2>Vistas como Elemento de Seguridad en MySQL</h2>
+    <p>Las vistas son tablas virtuales basadas en una consulta SQL. Constituyen un mecanismo fundamental para controlar la visibilidad y proteger la información confidencial.</p>
+
+    <h3>1. Restricción de Acceso (Vistas Horizontales, Verticales y Mixtas)</h3>
+    <pre><code>-- Vista Vertical (Oculta columnas sensibles como salarios o passwords)
+CREATE VIEW vista_empleados_publica AS 
+SELECT id, nombre, departamento FROM empleados;
+
+-- Vista Horizontal (Filtra filas según una condición)
+CREATE VIEW vista_empleados_madrid AS 
+SELECT * FROM empleados WHERE ciudad = 'Madrid';
+
+-- Vista Mixta (Filtra columnas y filas)
+CREATE VIEW vista_empleados_comercial AS 
+SELECT id, nombre, telefono FROM empleados WHERE departamento = 'Ventas';</code></pre>
+
+    <h3>2. Control de Acceso Mediante Vistas</h3>
+    <p>Podemos denegar el acceso a la tabla base a un usuario y concederle únicamente permisos sobre la vista:</p>
+    <pre><code>-- Revocar o no conceder permisos sobre la tabla principal
+-- Conceder acceso únicamente a la vista
+GRANT SELECT ON colegio.vista_empleados_publica TO 'usuario_consulta'@'localhost';</code></pre>
+
+    <h3>3. Cláusula SQL SECURITY (DEFINER vs INVOKER)</h3>
+    <p>MySQL permite definir el contexto de seguridad bajo el cual se ejecutará la vista:</p>
+    <ul>
+        <li><code>SQL SECURITY DEFINER</code> (Por defecto): La vista se ejecuta con los permisos del usuario que la **creó**. Permite dar acceso a datos filtrados de tablas a las que el usuario que consulta no tiene acceso directo.</li>
+        <li><code>SQL SECURITY INVOKER</code>: La vista se ejecuta con los permisos del usuario que **ejecuta la consulta**. Si este usuario no tiene acceso a las tablas base, la consulta fallará.</li>
+    </ul>
+
+    <pre><code>-- Crear vista ejecutada con privilegios del creador
+CREATE DEFINER = 'admin'@'localhost' SQL SECURITY DEFINER VIEW vista_protegida AS
+SELECT nombre, email FROM usuarios_sistema;</code></pre>
+
+    <h3>4. Vistas Actualizables y la opción WITH CHECK OPTION</h3>
+    <p>Una vista es actualizable si es simple (basada en una sola tabla, sin agregaciones, <code>GROUP BY</code>, <code>DISTINCT</code> o <code>UNION</code>).</p>
+    <p>La cláusula <code>WITH CHECK OPTION</code> evita que se inserten o modifiquen filas mediante la vista si no cumplen con las condiciones fijadas en la definición de la vista.</p>
+
+    <pre><code>CREATE VIEW vista_alumnos_aprobados AS
+SELECT id, nombre, nota FROM alumnos WHERE nota >= 5
+WITH CHECK OPTION;
+
+-- Si intentas insertar un alumno con nota 4 a través de la vista, MySQL rechazará la operación.</code></pre>
+
+</div>
+
+</body>
+</html>
